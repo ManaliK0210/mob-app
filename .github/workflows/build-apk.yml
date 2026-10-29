@@ -1,0 +1,67 @@
+name: Build Android APK
+
+# Builds an installable APK on GitHub's servers — no Android Studio needed.
+# Every push to main produces a new GitHub Release with forkcast.apk attached.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      AI_PROXY_URL: ${{ secrets.AI_PROXY_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund || npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: Align package versions with the Expo SDK
+        run: npx expo install --fix
+
+      - name: Run logic tests
+        run: npm test
+
+      - name: Inject AI proxy URL (optional secret)
+        if: env.AI_PROXY_URL != ''
+        run: |
+          node -e "const f='app.json';const j=require('./'+f);j.expo.extra.aiProxyUrl=process.env.AI_PROXY_URL;require('fs').writeFileSync(f,JSON.stringify(j,null,2))"
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+
+      - name: Collect APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk forkcast.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: forkcast-apk
+          path: forkcast.apk
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Forkcast v1.0.${{ github.run_number }}
+          body: |
+            Android APK for Forkcast. Download `forkcast.apk` below, open it on an Android phone and allow "Install unknown apps" when asked.
+          files: forkcast.apk
