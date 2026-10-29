@@ -44,6 +44,7 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), { status
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+    if (request.method === 'GET') return json({ ok: true, service: 'forkcast-ai', keyConfigured: Boolean(env.GEMINI_API_KEY) });
     if (request.method !== 'POST') return json({ error: 'POST { text, url } to this endpoint' }, 405);
 
     let body;
@@ -55,7 +56,7 @@ export default {
     const text = String(body.text || '').slice(0, 12000);
     if (text.trim().length < 10) return json({ error: 'Not enough text to read a recipe from' }, 400);
 
-    const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const model = env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
@@ -64,7 +65,10 @@ export default {
         generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0.2 },
       }),
     });
-    if (!res.ok) return json({ error: `Model error ${res.status}` }, 502);
+    if (!res.ok) {
+      const detail = (await res.text()).slice(0, 300);
+      return json({ error: `Model error ${res.status}: ${detail}` }, 502);
+    }
 
     const data = await res.json();
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
