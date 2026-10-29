@@ -27,9 +27,11 @@
       "bundleIdentifier": "com.forkcast.app",
       "supportsTablet": false
     },
-    "plugins": ["expo-font"],
+    "plugins": [
+      "expo-font"
+    ],
     "extra": {
-      "aiProxyUrl": ""
+      "aiProxyUrl": "https://forkcast-ai.manalik0210.workers.dev"
     }
   }
 }

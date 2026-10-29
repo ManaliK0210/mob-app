@@ -42,6 +42,16 @@ jobs:
         run: |
           node -e "const f='app.json';const j=require('./'+f);j.expo.extra.aiProxyUrl=process.env.AI_PROXY_URL;require('fs').writeFileSync(f,JSON.stringify(j,null,2))"
 
+      - name: Check AI import end to end
+        run: |
+          URL=$(node -p "require('./app.json').expo.extra.aiProxyUrl || ''")
+          if [ -z "$URL" ]; then echo "No AI proxy configured"; exit 0; fi
+          curl -s -m 60 -X POST -H "Content-Type: application/json" \
+            -d '{"text":"Cheese toast\n2 slices bread\n1 cup grated cheddar\nToast the bread, top with cheese, grill until bubbling."}' \
+            "$URL" | tee ai-check.json
+          echo
+          node -e "const r=require('./ai-check.json'); if(!r.title||!(r.ingredients||[]).length){console.log('::warning::AI import check failed: '+JSON.stringify(r)); } else console.log('AI import OK:', r.title, r.ingredients.length, 'ingredients')"
+
       - name: Generate native Android project
         run: npx expo prebuild --platform android --no-install
 
