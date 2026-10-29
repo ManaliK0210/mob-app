@@ -14,7 +14,7 @@ drops it into your week, and builds one merged grocery list sorted by aisle.
 | **Cook mode** | Full-screen, large-type, one step at a time; screen stays awake; ingredient peek. |
 | **Meal planner** | Week view with previous/next week, add meals per day, per-meal servings, one tap to build the week's grocery list. |
 | **Grocery list** | Merges duplicates across recipes (garlic from four recipes becomes "16 cloves"), scales by planned servings, groups by aisle, check off, add your own items in plain language ("2 lemons"), share as text. |
-| **Offline-first** | Everything is stored on the device (AsyncStorage). Six sample recipes and a planned week load on first launch. |
+| **Offline-first** | Everything is stored on the device (AsyncStorage). Nine sample recipes with photos and a planned week load on first launch. |
 
 ## Get the APK (no Android Studio needed)
 
@@ -75,5 +75,5 @@ scripts/test-logic.mjs    unit tests, also run in CI before every build
 
 ## Design
 
-Herb-green and saffron palette, Bricolage Grotesque for titles. Recipe tiles are bold colour blocks (or the
-imported photo), and the saffron Import button is the one loud element on every screen.
+Clean white, native Android look with a single tangerine accent and real food photography.
+Sample recipe photos are from [Unsplash](https://unsplash.com) (free under the Unsplash License); CI checks every photo URL loads before building.

@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
 import { useNav } from '../nav';
 import { formatIngredient } from '../lib/ingredients';
-import { colors, fonts, radius, space } from '../theme';
+import { colors, radius, space } from '../theme';
 
 // Full-screen, big-type step view. Keeps the screen awake while cooking.
 export default function CookModeScreen({ id, servings }) {
@@ -36,15 +36,15 @@ export default function CookModeScreen({ id, servings }) {
           onPress={() => setShowIngredients((v) => !v)}
           hitSlop={12}
           accessibilityLabel={showIngredients ? 'Show step' : 'Show ingredients'}
-          style={[styles.roundBtn, showIngredients && { backgroundColor: colors.saffron }]}
+          style={[styles.roundBtn, showIngredients && { backgroundColor: colors.accent }]}
         >
-          <Ionicons name="list" size={20} color={showIngredients ? colors.ink : '#fff'} />
+          <Ionicons name="list" size={20} color="#fff" />
         </Pressable>
       </View>
 
       <View style={styles.progress}>
         {recipe.steps.map((_, i) => (
-          <View key={i} style={[styles.progressSeg, i <= step && { backgroundColor: colors.saffron }]} />
+          <View key={i} style={[styles.progressSeg, i <= step && { backgroundColor: colors.accent }]} />
         ))}
       </View>
 
@@ -79,8 +79,8 @@ export default function CookModeScreen({ id, servings }) {
           style={[styles.navBtn, styles.navNext]}
           accessibilityLabel={last ? 'Finish cooking' : 'Next step'}
         >
-          <Text style={styles.navNextText}>{last ? 'Done — enjoy!' : 'Next step'}</Text>
-          {!last ? <Ionicons name="arrow-forward" size={22} color={colors.ink} /> : null}
+          <Text style={styles.navNextText}>{last ? 'Finish' : 'Next step'}</Text>
+          {!last ? <Ionicons name="arrow-forward" size={22} color="#fff" /> : null}
         </Pressable>
       </View>
     </View>
@@ -88,7 +88,7 @@ export default function CookModeScreen({ id, servings }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: colors.basilDark, paddingHorizontal: space.xl },
+  wrap: { flex: 1, backgroundColor: colors.dark, paddingHorizontal: space.xl },
   top: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   roundBtn: {
     width: 42,
@@ -101,8 +101,8 @@ const styles = StyleSheet.create({
   recipeName: { flex: 1, color: '#ffffffcc', fontSize: 15, textAlign: 'center' },
   progress: { flexDirection: 'row', gap: 4, marginTop: space.lg },
   progressSeg: { flex: 1, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.18)' },
-  stepCount: { color: colors.saffron, fontFamily: fonts.title, fontSize: 16, marginBottom: space.md },
-  stepText: { color: '#fff', fontFamily: fonts.medium, fontSize: 28, lineHeight: 38 },
+  stepCount: { color: colors.accent, fontWeight: '800', fontSize: 15, marginBottom: space.md },
+  stepText: { color: '#fff', fontWeight: '600', fontSize: 26, lineHeight: 36 },
   ingText: {
     color: '#fff',
     fontSize: 20,
@@ -114,6 +114,6 @@ const styles = StyleSheet.create({
   controls: { flexDirection: 'row', gap: space.md },
   navBtn: { height: 60, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   navBack: { width: 60, backgroundColor: 'rgba(255,255,255,0.12)' },
-  navNext: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: colors.saffron },
-  navNextText: { fontFamily: fonts.title, fontSize: 18, color: colors.ink },
+  navNext: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: colors.accent },
+  navNextText: { fontWeight: '800', fontSize: 17, color: '#fff' },
 });

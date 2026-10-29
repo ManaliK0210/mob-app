@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } from 'react-
 import { Ionicons } from '@expo/vector-icons';
 import { uid, useStore } from '../store';
 import { useNav } from '../nav';
-import { Button, Field, RecipeArt, TopBar } from '../components';
+import { Button, Field, RecipeImage, TopBar } from '../components';
 import { parseIngredient } from '../lib/ingredients';
 import { colors, radius, space, type } from '../theme';
 
@@ -64,16 +64,18 @@ export default function EditRecipeScreen({ draft, method, warning, recipeId }) {
       <TopBar title={existing ? 'Edit recipe' : 'Review recipe'} onBack={nav.pop} />
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         {method ? (
-          <View style={[styles.banner, warning && { backgroundColor: colors.saffronTint }]}>
-            <Ionicons name={warning ? 'information-circle' : 'checkmark-circle'} size={20} color={warning ? colors.ink : colors.basil} />
-            <Text style={[type.small, { flex: 1, color: colors.ink }]}>
-              {warning || `Imported via ${method.toLowerCase()}. Check it over, then save.`}
-            </Text>
+          <View style={[styles.banner, warning && { backgroundColor: colors.accentTint }]}>
+            <Ionicons
+              name={warning ? 'information-circle' : 'checkmark-circle'}
+              size={20}
+              color={warning ? colors.accent : colors.success}
+            />
+            <Text style={[type.small, { flex: 1, color: colors.ink }]}>{warning || 'Recipe imported. Check it over, then save.'}</Text>
           </View>
         ) : null}
 
         {(draft && draft.image) || (existing && existing.image) ? (
-          <RecipeArt recipe={existing || draft} height={180} style={{ marginBottom: space.lg }} />
+          <RecipeImage recipe={existing || draft} style={{ height: 190, marginBottom: space.lg }} />
         ) : null}
 
         <Field label="Recipe name" value={title} onChangeText={setTitle} placeholder="e.g. Grandma’s apple crumble" />
@@ -90,14 +92,14 @@ export default function EditRecipeScreen({ draft, method, warning, recipeId }) {
         </View>
         <Field label="Tags" value={tags} onChangeText={setTags} placeholder="dinner, vegetarian, quick" autoCapitalize="none" />
         <Field
-          label={`Ingredients · ${toLines(ingredients).length}`}
+          label={`Ingredients (${toLines(ingredients).length})`}
           value={ingredients}
           onChangeText={setIngredients}
           multiline
           placeholder={'One per line\n2 cups flour\n1 tsp salt'}
         />
         <Field
-          label={`Steps · ${toLines(steps).length}`}
+          label={`Steps (${toLines(steps).length})`}
           value={steps}
           onChangeText={setSteps}
           multiline
@@ -111,7 +113,7 @@ export default function EditRecipeScreen({ draft, method, warning, recipeId }) {
           </Text>
         ) : null}
 
-        {error ? <Text style={[type.small, { color: colors.tomato, marginBottom: space.md }]}>{error}</Text> : null}
+        {error ? <Text style={[type.small, { color: colors.danger, marginBottom: space.md }]}>{error}</Text> : null}
         <Button title={existing ? 'Save changes' : 'Save recipe'} icon="checkmark" onPress={save} />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -124,7 +126,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
-    backgroundColor: colors.basilTint,
+    backgroundColor: '#E9F6EF',
     padding: space.md,
     borderRadius: radius.sm,
     marginBottom: space.lg,

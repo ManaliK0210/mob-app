@@ -4,8 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
 import { useNav } from '../nav';
-import { Button, Chip, EmptyState, RecipeArt } from '../components';
+import { Button, Chip, EmptyState, IconButton, RecipeImage } from '../components';
 import { colors, radius, space, type } from '../theme';
+
+function metaLine(r) {
+  return [r.totalMinutes ? `${r.totalMinutes} min` : null, `${r.ingredients.length} ingredients`].filter(Boolean).join('  •  ');
+}
 
 export default function LibraryScreen() {
   const { state, actions } = useStore();
@@ -23,9 +27,11 @@ export default function LibraryScreen() {
       .map(([t]) => t);
   }, [state.recipes]);
 
+  const sorted = useMemo(() => [...state.recipes].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)), [state.recipes]);
+
   const recipes = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return state.recipes
+    return sorted
       .filter((r) => (filter === 'all' ? true : filter === 'fav' ? r.favorite : (r.tags || []).includes(filter)))
       .filter(
         (r) =>
@@ -33,15 +39,17 @@ export default function LibraryScreen() {
           r.title.toLowerCase().includes(q) ||
           (r.tags || []).some((t) => t.includes(q)) ||
           r.ingredients.some((i) => (i.name || '').toLowerCase().includes(q)),
-      )
-      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }, [state.recipes, query, filter]);
+      );
+  }, [sorted, query, filter]);
+
+  const browsing = !query.trim() && filter === 'all';
+  const recent = sorted.slice(0, 5);
 
   const header = (
     <View>
-      <View style={[styles.head, { paddingTop: insets.top + space.lg }]}>
-        <Text style={type.hero}>Your recipes</Text>
-        <Text style={[type.small, { marginTop: 4 }]}>{state.recipes.length} saved · paste any link to add more</Text>
+      <View style={[styles.head, { paddingTop: insets.top + space.md }]}>
+        <Text style={type.largeTitle}>Recipes</Text>
+        <IconButton name="settings-outline" onPress={() => nav.push('settings')} label="Settings" bg={colors.surface} />
       </View>
 
       <View style={styles.search}>
@@ -63,11 +71,49 @@ export default function LibraryScreen() {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         <Chip label="All" active={filter === 'all'} onPress={() => setFilter('all')} />
-        <Chip label="Favourites" icon="heart" active={filter === 'fav'} onPress={() => setFilter('fav')} />
+        <Chip label="Favorites" active={filter === 'fav'} onPress={() => setFilter('fav')} />
         {topTags.map((t) => (
-          <Chip key={t} label={t} active={filter === t} onPress={() => setFilter(filter === t ? 'all' : t)} />
+          <Chip
+            key={t}
+            label={t.charAt(0).toUpperCase() + t.slice(1)}
+            active={filter === t}
+            onPress={() => setFilter(filter === t ? 'all' : t)}
+          />
         ))}
       </ScrollView>
+
+      {browsing && recent.length > 2 ? (
+        <>
+          <Text style={[type.h2, styles.sectionTitle]}>Recently saved</Text>
+          <FlatList
+            horizontal
+            data={recent}
+            keyExtractor={(r) => `recent-${r.id}`}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: space.lg, gap: space.md }}
+            renderItem={({ item }) => (
+              <Pressable
+                style={styles.featured}
+                onPress={() => nav.push('recipe', { id: item.id })}
+                accessibilityRole="button"
+                accessibilityLabel={item.title}
+              >
+                <RecipeImage recipe={item} style={{ height: 170 }} iconSize={36} />
+                <Text style={[type.h3, { marginTop: space.sm }]} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Text style={[type.tiny, { marginTop: 2 }]}>{metaLine(item)}</Text>
+              </Pressable>
+            )}
+          />
+        </>
+      ) : null}
+
+      {recipes.length ? (
+        <Text style={[type.h2, styles.sectionTitle]}>
+          {browsing ? 'All recipes' : 'Results'} <Text style={{ color: colors.muted, fontWeight: '600' }}>{recipes.length}</Text>
+        </Text>
+      ) : null}
     </View>
   );
 
@@ -78,17 +124,17 @@ export default function LibraryScreen() {
       numColumns={2}
       ListHeaderComponent={header}
       columnWrapperStyle={{ paddingHorizontal: space.lg, gap: space.md }}
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={{ paddingBottom: 110 }}
       keyboardShouldPersistTaps="handled"
       ListEmptyComponent={
         state.recipes.length ? (
-          <EmptyState emoji="🔍" title="No matches" body="Try another word, or clear the filter to see everything." />
+          <EmptyState icon="search" title="No matches" body="Try a different word, or clear the filter to see all your recipes." />
         ) : (
           <EmptyState
-            emoji="🥄"
-            title="Your recipe box is empty"
-            body="Paste a link from TikTok, Instagram, YouTube or any recipe blog and Forkcast turns it into a clean recipe card."
-            action={<Button title="Import a recipe" icon="link" variant="saffron" onPress={() => nav.push('import')} />}
+            icon="book-outline"
+            title="No recipes yet"
+            body="Save recipes from TikTok, Instagram, YouTube or any website. We'll pull out the ingredients and steps for you."
+            action={<Button title="Add your first recipe" icon="add" onPress={() => nav.push('import')} />}
           />
         )
       }
@@ -99,20 +145,20 @@ export default function LibraryScreen() {
           accessibilityRole="button"
           accessibilityLabel={item.title}
         >
-          <RecipeArt recipe={item} height={132} emojiSize={52} />
+          <RecipeImage recipe={item} style={{ aspectRatio: 1 }} />
           <Pressable
             style={styles.heart}
             onPress={() => actions.toggleFavorite(item.id)}
             hitSlop={8}
-            accessibilityLabel={item.favorite ? 'Remove from favourites' : 'Add to favourites'}
+            accessibilityLabel={item.favorite ? 'Remove from favorites' : 'Add to favorites'}
           >
-            <Ionicons name={item.favorite ? 'heart' : 'heart-outline'} size={18} color={item.favorite ? colors.tomato : colors.ink} />
+            <Ionicons name={item.favorite ? 'heart' : 'heart-outline'} size={18} color={item.favorite ? colors.accent : colors.ink} />
           </Pressable>
           <Text style={[type.h3, { marginTop: space.sm }]} numberOfLines={2}>
             {item.title}
           </Text>
-          <Text style={[type.tiny, { marginTop: 2 }]} numberOfLines={1}>
-            {[item.totalMinutes ? `${item.totalMinutes} min` : null, `${item.ingredients.length} ingredients`].filter(Boolean).join(' · ')}
+          <Text style={[type.tiny, { marginTop: 3 }]} numberOfLines={1}>
+            {metaLine(item)}
           </Text>
         </Pressable>
       )}
@@ -121,7 +167,13 @@ export default function LibraryScreen() {
 }
 
 const styles = StyleSheet.create({
-  head: { paddingHorizontal: space.lg, paddingBottom: space.lg },
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: space.lg,
+    paddingBottom: space.md,
+  },
   search: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -129,14 +181,14 @@ const styles = StyleSheet.create({
     marginHorizontal: space.lg,
     paddingHorizontal: 14,
     height: 46,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
   },
   searchInput: { flex: 1, fontSize: 15, color: colors.ink, paddingVertical: 0 },
-  chips: { paddingHorizontal: space.lg, paddingVertical: space.md },
-  card: { flex: 1, marginBottom: space.lg, maxWidth: '50%' },
+  chips: { paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm },
+  sectionTitle: { paddingHorizontal: space.lg, marginTop: space.lg, marginBottom: space.md },
+  featured: { width: 250 },
+  card: { flex: 1, marginBottom: space.xl, maxWidth: '48.5%' },
   heart: {
     position: 'absolute',
     top: 8,
@@ -144,7 +196,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
   },

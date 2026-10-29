@@ -3,17 +3,11 @@ import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  useFonts,
-  BricolageGrotesque_500Medium,
-  BricolageGrotesque_700Bold,
-  BricolageGrotesque_800ExtraBold,
-} from '@expo-google-fonts/bricolage-grotesque';
 
 import { StoreProvider, useStore } from './src/store';
 import { NavContext } from './src/nav';
 import { PushedScreen, Toast } from './src/components';
-import { colors, fonts } from './src/theme';
+import { colors } from './src/theme';
 
 import LibraryScreen from './src/screens/LibraryScreen';
 import PlannerScreen from './src/screens/PlannerScreen';
@@ -35,10 +29,8 @@ const PUSHED = {
 
 const TABS = [
   { key: 'recipes', label: 'Recipes', icon: 'book' },
-  { key: 'plan', label: 'Plan', icon: 'calendar' },
-  { key: 'import', label: 'Import', icon: 'add', special: true },
-  { key: 'grocery', label: 'Groceries', icon: 'basket' },
-  { key: 'settings', label: 'Settings', icon: 'options' },
+  { key: 'plan', label: 'Meal plan', icon: 'calendar' },
+  { key: 'grocery', label: 'Groceries', icon: 'cart' },
 ];
 
 function Shell() {
@@ -79,9 +71,7 @@ function Shell() {
 
   const nav = useMemo(() => ({ tab, setTab, push, pop, replace, reset, toast }), [tab, push, pop, replace, reset, toast]);
 
-  if (!state.hydrated) {
-    return <View style={{ flex: 1, backgroundColor: colors.paper }} />;
-  }
+  if (!state.hydrated) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
 
   if (!state.settings.onboarded) {
     return (
@@ -93,40 +83,47 @@ function Shell() {
 
   const TabScreen = tab === 'plan' ? PlannerScreen : tab === 'grocery' ? GroceryScreen : LibraryScreen;
   const top = stack[stack.length - 1];
-  const darkTop = top && top.name === 'cook';
+  const openItems = state.grocery.filter((g) => !g.checked).length;
 
   return (
     <NavContext.Provider value={nav}>
-      <View style={{ flex: 1, backgroundColor: colors.paper }}>
-        <StatusBar style={darkTop ? 'light' : 'dark'} />
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <StatusBar style={top && top.name === 'cook' ? 'light' : 'dark'} />
         <View style={{ flex: 1 }}>
           <TabScreen />
         </View>
 
-        <View style={[s.tabBar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+        {tab === 'recipes' ? (
+          <Pressable
+            onPress={() => push('import')}
+            style={({ pressed }) => [s.fab, { bottom: Math.max(insets.bottom, 8) + 74 }, pressed && { transform: [{ scale: 0.96 }] }]}
+            accessibilityRole="button"
+            accessibilityLabel="Add a recipe"
+          >
+            <Ionicons name="add" size={30} color="#fff" />
+          </Pressable>
+        ) : null}
+
+        <View style={[s.tabBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
           {TABS.map((t) => {
-            if (t.special) {
-              return (
-                <Pressable
-                  key={t.key}
-                  onPress={() => push('import')}
-                  style={s.importWrap}
-                  accessibilityRole="button"
-                  accessibilityLabel="Import a recipe"
-                >
-                  <View style={s.importBtn}>
-                    <Ionicons name="add" size={30} color={colors.ink} />
-                  </View>
-                </Pressable>
-              );
-            }
             const active = tab === t.key;
-            const onPress = t.key === 'settings' ? () => push('settings') : () => setTab(t.key);
             return (
-              <Pressable key={t.key} onPress={onPress} style={s.tab} accessibilityRole="tab" accessibilityState={{ selected: active }}>
-                <Ionicons name={active ? t.icon : `${t.icon}-outline`} size={22} color={active ? colors.basil : colors.muted} />
-                <Text style={[s.tabLabel, active && { color: colors.basil, fontFamily: fonts.title }]}>{t.label}</Text>
-                {t.key === 'grocery' && state.grocery.some((g) => !g.checked) ? <View style={s.dot} /> : null}
+              <Pressable
+                key={t.key}
+                onPress={() => setTab(t.key)}
+                style={s.tab}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+              >
+                <View>
+                  <Ionicons name={active ? t.icon : `${t.icon}-outline`} size={24} color={active ? colors.accent : colors.muted} />
+                  {t.key === 'grocery' && openItems ? (
+                    <View style={s.badge}>
+                      <Text style={s.badgeText}>{openItems > 99 ? '99+' : openItems}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={[s.tabLabel, active && { color: colors.accent }]}>{t.label}</Text>
               </Pressable>
             );
           })}
@@ -148,9 +145,6 @@ function Shell() {
 }
 
 export default function App() {
-  // If the display font ever fails to load, carry on with the system font rather than blocking the app.
-  const [fontsLoaded, fontError] = useFonts({ BricolageGrotesque_500Medium, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold });
-  if (!fontsLoaded && !fontError) return <View style={{ flex: 1, backgroundColor: colors.paper }} />;
   return (
     <SafeAreaProvider>
       <StoreProvider>
@@ -163,26 +157,41 @@ export default function App() {
 const s = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
+    backgroundColor: colors.bg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#DADAD6',
     paddingTop: 8,
   },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, paddingVertical: 2 },
-  tabLabel: { fontSize: 11, color: colors.muted },
-  importWrap: { flex: 1, alignItems: 'center' },
-  importBtn: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: colors.saffron,
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  tabLabel: { fontSize: 12, fontWeight: '600', color: colors.muted },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -12,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -26,
-    borderWidth: 4,
-    borderColor: colors.surface,
-    elevation: 4,
+    borderWidth: 2,
+    borderColor: colors.bg,
   },
-  dot: { position: 'absolute', top: 0, right: '30%', width: 8, height: 8, borderRadius: 4, backgroundColor: colors.tomato },
+  badgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+  },
 });

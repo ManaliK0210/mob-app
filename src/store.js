@@ -4,12 +4,10 @@ import { seedRecipes } from './data/seed';
 import { mergeIngredients } from './lib/ingredients';
 import { toKey, weekDays } from './lib/dates';
 
-const STORAGE_KEY = 'forkcast/state/v1';
+const STORAGE_KEY = 'forkcast/state/v2';
 
 export const uid = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-const CARD_COLORS = ['#F6D8C8', '#DDE8D3', '#FBEBB5', '#E3DDF2', '#F3D9B8', '#F5CFC6', '#D6E6EE'];
-const EMOJIS = ['🍲', '🥘', '🍝', '🥙', '🍛', '🥞', '🌮', '🍱', '🥧', '🍰'];
 
 function seededPlan(recipes) {
   const days = weekDays(0);
@@ -21,11 +19,13 @@ function seededPlan(recipes) {
     const key = toKey(days[dayIdx]);
     plan[key] = [...(plan[key] || []), { id: uid(), recipeId: id, servings: r.servings }];
   };
-  add(0, 'seed-lemon-chicken');
+  add(0, 'seed-butter-chicken');
   add(1, 'seed-overnight-oats');
   add(1, 'seed-peanut-noodles');
+  add(2, 'seed-tacos');
   add(3, 'seed-shrimp-pasta');
-  add(5, 'seed-shakshuka');
+  add(5, 'seed-pancakes');
+  add(6, 'seed-lemon-chicken');
   return plan;
 }
 
@@ -65,8 +65,6 @@ function reducer(state, action) {
         id: uid(),
         createdAt: Date.now(),
         favorite: false,
-        color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
-        emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
         ...r,
       };
       return { ...state, recipes: [recipe, ...state.recipes], lastAddedId: recipe.id };

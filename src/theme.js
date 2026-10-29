@@ -1,36 +1,39 @@
+// Clean, native-feeling palette: white surfaces, one warm accent, real photography does the rest.
 export const colors = {
-  paper: '#EEF2EA',
-  surface: '#FFFFFF',
-  ink: '#17251E',
-  inkSoft: '#4A5A50',
-  muted: '#7C8A80',
-  line: '#D9E0D4',
-  basil: '#1F5C45',
-  basilDark: '#143F2F',
-  basilTint: '#DCE9DF',
-  saffron: '#FFB627',
-  saffronTint: '#FFF1CC',
-  tomato: '#E2483D',
-  tomatoTint: '#FBE1DE',
-};
-
-// Loaded in App.js via @expo-google-fonts/bricolage-grotesque. Falls back to system font until loaded.
-export const fonts = {
-  display: 'BricolageGrotesque_800ExtraBold',
-  title: 'BricolageGrotesque_700Bold',
-  medium: 'BricolageGrotesque_500Medium',
+  bg: '#FFFFFF',
+  surface: '#F5F5F3',
+  surfaceAlt: '#EFEFEC',
+  ink: '#1B1B1B',
+  inkSoft: '#5F5F5F',
+  muted: '#9A9A96',
+  line: '#ECECE8',
+  accent: '#F2542D',
+  accentDark: '#C9401E',
+  accentTint: '#FFEEE8',
+  success: '#2E9E62',
+  danger: '#D93B30',
+  dangerTint: '#FDECEA',
+  dark: '#141414',
 };
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
 
-export const radius = { sm: 10, md: 16, lg: 24, pill: 999 };
+export const radius = { sm: 10, md: 14, lg: 20, pill: 999 };
 
 export const type = {
-  hero: { fontFamily: fonts.display, fontSize: 34, lineHeight: 38, color: colors.ink, letterSpacing: -0.5 },
-  h1: { fontFamily: fonts.display, fontSize: 28, lineHeight: 32, color: colors.ink, letterSpacing: -0.3 },
-  h2: { fontFamily: fonts.title, fontSize: 20, lineHeight: 26, color: colors.ink },
-  h3: { fontFamily: fonts.title, fontSize: 16, lineHeight: 21, color: colors.ink },
+  largeTitle: { fontSize: 30, lineHeight: 36, fontWeight: '800', color: colors.ink, letterSpacing: -0.6 },
+  title: { fontSize: 24, lineHeight: 30, fontWeight: '800', color: colors.ink, letterSpacing: -0.4 },
+  h2: { fontSize: 19, lineHeight: 25, fontWeight: '700', color: colors.ink, letterSpacing: -0.2 },
+  h3: { fontSize: 16, lineHeight: 21, fontWeight: '700', color: colors.ink },
   body: { fontSize: 16, lineHeight: 24, color: colors.ink },
   small: { fontSize: 14, lineHeight: 20, color: colors.inkSoft },
   tiny: { fontSize: 12, lineHeight: 16, color: colors.muted },
+};
+
+export const shadow = {
+  elevation: 3,
+  shadowColor: '#000',
+  shadowOpacity: 0.08,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 4 },
 };

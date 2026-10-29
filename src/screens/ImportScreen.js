@@ -5,11 +5,11 @@ import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { useStore } from '../store';
 import { useNav } from '../nav';
-import { Button, Chip, Field, TopBar } from '../components';
+import { Button, Field, Segmented, TopBar } from '../components';
 import { importFromText, importFromUrl } from '../lib/importer';
 import { colors, radius, space, type } from '../theme';
 
-const SAMPLE_CAPTION = `Creamy Tuscan Gnocchi 🤤 ready in 20 minutes!
+const SAMPLE_CAPTION = `Creamy Tuscan Gnocchi ready in 20 minutes!
 Ingredients:
 - 1 lb gnocchi
 - 2 tbsp butter
@@ -25,6 +25,13 @@ Method:
 3. Stir in the spinach until wilted, then pour in the cream and parmesan. Simmer for 3 minutes.
 4. Return the gnocchi to the pan, toss to coat and season to taste.
 #dinner #pasta #easyrecipes`;
+
+const SOURCES = [
+  { icon: 'logo-tiktok', label: 'TikTok' },
+  { icon: 'logo-instagram', label: 'Instagram' },
+  { icon: 'logo-youtube', label: 'YouTube' },
+  { icon: 'globe-outline', label: 'Websites' },
+];
 
 export function getAiUrl(settings) {
   return (settings.aiUrl || Constants.expoConfig?.extra?.aiProxyUrl || '').trim();
@@ -47,7 +54,7 @@ export default function ImportScreen() {
       setUrl(found);
       setError('');
     } else {
-      setError('Your clipboard doesn’t have a link in it. Copy the share link from TikTok, Instagram or a recipe site first.');
+      setError('There’s no link on your clipboard. Tap Share → Copy link in TikTok, Instagram or your browser first.');
     }
   };
 
@@ -58,7 +65,7 @@ export default function ImportScreen() {
       const result = mode === 'link' ? await importFromUrl(url, { aiUrl }) : await importFromText(text, { aiUrl });
       nav.replace('edit', { draft: result.recipe, method: result.method, warning: result.warning });
     } catch (e) {
-      setError(e.message || 'Import failed. Try pasting the recipe text instead.');
+      setError(e.message || 'Import didn’t work. Try pasting the recipe text instead.');
     } finally {
       setLoading(false);
     }
@@ -66,102 +73,102 @@ export default function ImportScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <TopBar title="Import a recipe" onBack={nav.pop} />
+      <TopBar title="" onBack={nav.pop} />
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <Text style={type.h1}>Turn any post into a recipe card</Text>
-        <Text style={[type.small, { marginTop: space.sm, marginBottom: space.lg }]}>
-          Paste a link from TikTok, Instagram, YouTube or a recipe blog — or paste the recipe text itself.
-        </Text>
+        <Text style={type.title}>Add a recipe</Text>
+        <Text style={[type.small, { marginTop: 6 }]}>We’ll pull out the ingredients and steps for you.</Text>
 
-        <View style={styles.segment}>
-          <Chip label="From a link" icon="link" active={mode === 'link'} onPress={() => setMode('link')} />
-          <Chip label="From text" icon="document-text" active={mode === 'text'} onPress={() => setMode('text')} />
+        <View style={styles.sources}>
+          {SOURCES.map((s) => (
+            <View key={s.label} style={styles.source}>
+              <View style={styles.sourceIcon}>
+                <Ionicons name={s.icon} size={20} color={colors.ink} />
+              </View>
+              <Text style={type.tiny}>{s.label}</Text>
+            </View>
+          ))}
         </View>
 
-        {mode === 'link' ? (
-          <>
-            <Field
-              value={url}
-              onChangeText={setUrl}
-              placeholder="https://www.tiktok.com/@chef/video/…"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              returnKeyType="go"
-              onSubmitEditing={run}
-            />
-            <Button title="Paste link from clipboard" icon="clipboard-outline" variant="outline" onPress={pasteLink} />
-          </>
-        ) : (
-          <>
-            <Field
-              value={text}
-              onChangeText={setText}
-              placeholder={'Paste a caption, a message from a friend, or notes.\nList ingredients and steps on separate lines.'}
-              multiline
-              inputStyle={{ minHeight: 200 }}
-            />
-            <Button title="Try a sample caption" icon="sparkles-outline" variant="outline" onPress={() => setText(SAMPLE_CAPTION)} />
-          </>
-        )}
+        <Segmented
+          options={[
+            { value: 'link', label: 'Paste link' },
+            { value: 'text', label: 'Paste text' },
+          ]}
+          value={mode}
+          onChange={(v) => {
+            setMode(v);
+            setError('');
+          }}
+        />
+
+        <View style={{ marginTop: space.lg }}>
+          {mode === 'link' ? (
+            <>
+              <Field
+                value={url}
+                onChangeText={setUrl}
+                placeholder="https://"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                returnKeyType="go"
+                onSubmitEditing={run}
+              />
+              <Button title="Paste from clipboard" icon="clipboard-outline" variant="secondary" compact onPress={pasteLink} />
+            </>
+          ) : (
+            <>
+              <Field
+                value={text}
+                onChangeText={setText}
+                placeholder={'Paste a caption, a message or your own notes.\nPut ingredients and steps on separate lines.'}
+                multiline
+                inputStyle={{ minHeight: 200 }}
+              />
+              <Button
+                title="Use an example"
+                icon="document-text-outline"
+                variant="secondary"
+                compact
+                onPress={() => setText(SAMPLE_CAPTION)}
+              />
+            </>
+          )}
+        </View>
 
         {error ? (
           <View style={styles.error}>
-            <Ionicons name="alert-circle" size={18} color={colors.tomato} />
-            <Text style={[type.small, { color: colors.tomato, flex: 1 }]}>{error}</Text>
+            <Ionicons name="alert-circle" size={18} color={colors.danger} />
+            <Text style={[type.small, { color: colors.danger, flex: 1 }]}>{error}</Text>
           </View>
         ) : null}
 
         <Button
-          title={loading ? 'Reading recipe…' : 'Import recipe'}
-          icon="download-outline"
-          variant="saffron"
+          title={loading ? 'Importing…' : 'Import recipe'}
           loading={loading}
           disabled={mode === 'link' ? !url.trim() : !text.trim()}
           onPress={run}
           style={{ marginTop: space.xl }}
         />
 
-        <View style={styles.aiNote}>
-          <Ionicons name={aiUrl ? 'sparkles' : 'sparkles-outline'} size={18} color={aiUrl ? colors.basil : colors.muted} />
-          <Text style={[type.tiny, { flex: 1, color: colors.inkSoft }]}>
-            {aiUrl
-              ? 'AI import is on: captions and messy pages are read by AI, then you review before saving.'
-              : 'Recipe blogs import instantly. For social captions, turn on AI import in Settings for the best results.'}
-          </Text>
-        </View>
-
-        <Button
-          title="Write a recipe from scratch"
-          variant="ghost"
-          icon="create-outline"
-          onPress={() => nav.replace('edit', {})}
-          style={{ marginTop: space.md }}
-        />
+        <Button title="Write my own recipe" variant="ghost" onPress={() => nav.replace('edit', {})} style={{ marginTop: space.sm }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { padding: space.lg, paddingBottom: 60 },
-  segment: { flexDirection: 'row', marginBottom: space.lg },
+  body: { paddingHorizontal: space.lg, paddingBottom: 60 },
+  sources: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: space.xl },
+  source: { alignItems: 'center', gap: 6, flex: 1 },
+  sourceIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   error: {
     flexDirection: 'row',
     gap: 8,
     alignItems: 'flex-start',
-    backgroundColor: colors.tomatoTint,
+    backgroundColor: colors.dangerTint,
     padding: space.md,
     borderRadius: radius.sm,
     marginTop: space.lg,
-  },
-  aiNote: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-    marginTop: space.lg,
-    padding: space.md,
-    borderRadius: radius.sm,
-    backgroundColor: colors.basilTint,
   },
 });

@@ -37,6 +37,9 @@ jobs:
       - name: Run logic tests
         run: npm test
 
+      - name: Check sample photos load
+        run: node scripts/check-photos.mjs
+
       - name: Inject AI proxy URL (optional secret)
         if: env.AI_PROXY_URL != ''
         run: |

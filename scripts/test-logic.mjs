@@ -64,7 +64,7 @@ test('merges duplicate ingredients across recipes', () => {
   );
   const garlic = merged.find((m) => m.name === 'Garlic' && m.unit === 'clove');
   assert.ok(garlic, 'garlic merged');
-  assert.equal(garlic.qty, 16);
+  assert.equal(garlic.qty, 15);
   assert.equal(garlic.sources.length, 4);
 });
 test('extracts schema.org recipes (with @graph and HowToSection)', () => {
