@@ -56,19 +56,30 @@ export default {
     const text = String(body.text || '').slice(0, 12000);
     if (text.trim().length < 10) return json({ error: 'Not enough text to read a recipe from' }, 400);
 
-    const model = env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: PROMPT + (body.url ? `(from ${body.url})\n` : '') + text }] }],
-        generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0.2 },
-      }),
+    // Try the main model, then backups. Busy (429/503) or unknown models (404) move on to the next one.
+    const models = [...new Set([env.GEMINI_MODEL || 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash'])];
+    const payload = JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: PROMPT + (body.url ? `(from ${body.url})\n` : '') + text }] }],
+      generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0.2 },
     });
-    if (!res.ok) {
-      const detail = (await res.text()).slice(0, 300);
-      return json({ error: `Model error ${res.status}: ${detail}` }, 502);
+    let res;
+    let lastError = '';
+    for (const model of models) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+          body: payload,
+        });
+        if (res.ok) break;
+        lastError = `${model} ${res.status}: ${(await res.text()).slice(0, 200)}`;
+        if (res.status !== 429 && res.status !== 503) break; // not a busy error: no point retrying this model
+        await new Promise((r) => setTimeout(r, 800));
+      }
+      if (res.ok) break;
+      if (![404, 429, 503].includes(res.status)) break; // e.g. bad key: stop and report
     }
+    if (!res.ok) return json({ error: `Model error: ${lastError}` }, 502);
 
     const data = await res.json();
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
